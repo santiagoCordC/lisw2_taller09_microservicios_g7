@@ -1,0 +1,1793 @@
+{
+  "info": {
+    "_postman_id": "70d7a064-47ba-5c03-a84f-18ac82104510",
+    "name": "SaberPro Microservices - Taller 09",
+    "description": "Pruebas de comunicación síncrona (REST) y asíncrona (RabbitMQ) del Banco de Preguntas Saber Pro.\n\nEjecutar la colección completa en orden con el Collection Runner (con los 6 servicios y RabbitMQ arriba). Las peticiones guardan los ids necesarios en variables de colección. Las consultas de operaciones asíncronas esperan unos segundos antes de ejecutarse (pre-request script).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. User Service (:8081)",
+      "description": "Autenticación síncrona POST /auth/login. Sin tokens en esta versión: el id del usuario se guarda en variables y se envía en X-User-Id.",
+      "item": [
+        {
+          "name": "Login docente (válido)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{user_service_url}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"docente\",\n  \"password\": \"docente123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200 - autenticación exitosa', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('authenticated = true y rol DOCENTE', function () {",
+                  "    pm.expect(body.authenticated).to.eql(true);",
+                  "    pm.expect(body.user.roles).to.include('DOCENTE');",
+                  "});",
+                  "pm.collectionVariables.set('docenteId', body.user.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login administrador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{user_service_url}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.collectionVariables.set('adminId', pm.response.json().user.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login revisor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{user_service_url}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"revisor\",\n  \"password\": \"revisor123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.collectionVariables.set('revisorId', pm.response.json().user.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login estudiante",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{user_service_url}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"estudiante\",\n  \"password\": \"estudiante123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.collectionVariables.set('estudianteId', pm.response.json().user.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login con credenciales incorrectas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{user_service_url}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"docente\",\n  \"password\": \"clave-equivocada\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401 - acceso rechazado', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test('authenticated = false', function () {",
+                  "    pm.expect(pm.response.json().authenticated).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login de usuario inactivo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{user_service_url}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"inactivo\",\n  \"password\": \"inactivo123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403 - usuario inactivo', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login sin contraseña (datos inválidos)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{user_service_url}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"docente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar revisores",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{user_service_url}}/users?role=REVISOR"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('todos tienen rol REVISOR', function () {",
+                  "    pm.response.json().forEach(u => pm.expect(u.roles).to.include('REVISOR'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Validation Service (:8082)",
+      "description": "Validación estructural síncrona. Siempre responde 200 con valid=true/false; Question Service decide 201 o 400.",
+      "item": [
+        {
+          "name": "Validar pregunta válida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{validation_service_url}}/validate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"context\": \"Un equipo desarrolla un sistema distribuido en el que varios microservicios intercambian información para completar un mismo proceso de negocio.\",\n  \"statement\": \"¿Cuál es la principal ventaja de usar un broker de mensajes como RabbitMQ para la comunicación entre microservicios?\",\n  \"competence\": \"Diseño de software\",\n  \"topic\": \"Arquitectura de microservicios\",\n  \"subtopic\": \"Comunicación asíncrona\",\n  \"options\": [\n    {\n      \"id\": \"A\",\n      \"text\": \"Reduce el acoplamiento temporal, porque el productor no necesita que el consumidor esté disponible.\"\n    },\n    {\n      \"id\": \"B\",\n      \"text\": \"Garantiza que las respuestas lleguen en el mismo orden en que se hicieron las peticiones HTTP.\"\n    },\n    {\n      \"id\": \"C\",\n      \"text\": \"Elimina la necesidad de acordar contratos de datos entre los servicios que se comunican.\"\n    },\n    {\n      \"id\": \"D\",\n      \"text\": \"Permite que todos los microservicios compartan la misma base de datos sin conflictos.\"\n    }\n  ],\n  \"correctOptionId\": \"A\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('valid = true', function () {",
+                  "    pm.expect(pm.response.json().valid).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Validar pregunta inválida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{validation_service_url}}/validate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"statement\": \"¿Qué es?\",\n  \"options\": [\n    {\n      \"id\": \"A\",\n      \"text\": \"Un patrón\"\n    },\n    {\n      \"id\": \"B\",\n      \"text\": \"Todas las anteriores\"\n    },\n    {\n      \"id\": \"C\",\n      \"text\": \"Un patrón\"\n    }\n  ],\n  \"correctOptionId\": \"E\",\n  \"difficulty\": \"ALTO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('valid = false con errores', function () {",
+                  "    pm.expect(body.valid).to.eql(false);",
+                  "    pm.expect(body.errors.length).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Question Service (:8083)",
+      "description": "Creación síncrona (REST → Validation, REST → Lifecycle) y envío asíncrono a revisión (comando RabbitMQ + 202 Accepted + consulta posterior).",
+      "item": [
+        {
+          "name": "Crear pregunta válida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{docenteId}}"
+              }
+            ],
+            "url": "{{question_service_url}}/questions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"context\": \"Un equipo desarrolla un sistema distribuido en el que varios microservicios intercambian información para completar un mismo proceso de negocio.\",\n  \"statement\": \"¿Cuál es la principal ventaja de usar un broker de mensajes como RabbitMQ para la comunicación entre microservicios?\",\n  \"options\": [\n    {\n      \"id\": \"A\",\n      \"text\": \"Reduce el acoplamiento temporal, porque el productor no necesita que el consumidor esté disponible.\"\n    },\n    {\n      \"id\": \"B\",\n      \"text\": \"Garantiza que las respuestas lleguen en el mismo orden en que se hicieron las peticiones HTTP.\"\n    },\n    {\n      \"id\": \"C\",\n      \"text\": \"Elimina la necesidad de acordar contratos de datos entre los servicios que se comunican.\"\n    },\n    {\n      \"id\": \"D\",\n      \"text\": \"Permite que todos los microservicios compartan la misma base de datos sin conflictos.\"\n    }\n  ],\n  \"correctOptionId\": \"A\",\n  \"justification\": \"La mensajería asíncrona desacopla en el tiempo al productor y al consumidor: el mensaje queda en la cola hasta que el consumidor pueda procesarlo.\",\n  \"bibliography\": \"Richardson, C. (2018). Microservices Patterns. Manning.\",\n  \"competence\": \"Diseño de software\",\n  \"topic\": \"Arquitectura de microservicios\",\n  \"subtopic\": \"Comunicación asíncrona\",\n  \"difficulty\": \"MEDIO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201 - pregunta creada', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('persistida en DRAFT', function () {",
+                  "    pm.expect(body.question.state).to.eql('DRAFT');",
+                  "});",
+                  "pm.collectionVariables.set('questionId', body.question.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear segunda pregunta (queda en DRAFT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{docenteId}}"
+              }
+            ],
+            "url": "{{question_service_url}}/questions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"context\": \"Un cliente envía una solicitud a un servicio que publicará un comando en una cola para que otro servicio lo procese más tarde.\",\n  \"statement\": \"¿Qué código de estado HTTP es el más adecuado para responder inmediatamente a esa solicitud?\",\n  \"options\": [\n    {\n      \"id\": \"A\",\n      \"text\": \"200 OK, porque la operación ya fue completada por el servicio consumidor.\"\n    },\n    {\n      \"id\": \"B\",\n      \"text\": \"202 Accepted, porque la solicitud fue aceptada pero su procesamiento aún no termina.\"\n    },\n    {\n      \"id\": \"C\",\n      \"text\": \"201 Created, porque siempre se crea un recurso nuevo en el servidor.\"\n    },\n    {\n      \"id\": \"D\",\n      \"text\": \"204 No Content, porque el cliente no necesita ninguna información adicional.\"\n    }\n  ],\n  \"correctOptionId\": \"B\",\n  \"justification\": \"202 indica que la petición fue aceptada para procesamiento, sin garantizar que haya terminado.\",\n  \"bibliography\": \"RFC 9110 - HTTP Semantics, sección 15.3.3.\",\n  \"competence\": \"Desarrollo de software\",\n  \"topic\": \"Servicios web REST\",\n  \"subtopic\": \"Códigos de estado\",\n  \"difficulty\": \"BAJO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.collectionVariables.set('draftQuestionId', pm.response.json().question.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear pregunta inválida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{docenteId}}"
+              }
+            ],
+            "url": "{{question_service_url}}/questions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"statement\": \"¿Qué es?\",\n  \"options\": [\n    {\n      \"id\": \"A\",\n      \"text\": \"Un patrón\"\n    },\n    {\n      \"id\": \"B\",\n      \"text\": \"Todas las anteriores\"\n    },\n    {\n      \"id\": \"C\",\n      \"text\": \"Un patrón\"\n    }\n  ],\n  \"correctOptionId\": \"E\",\n  \"difficulty\": \"ALTO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400 - no se registra como válida', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('informa los errores de validación', function () {",
+                  "    pm.expect(pm.response.json().errors.length).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear pregunta sin autenticación",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{question_service_url}}/questions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"context\": \"Un equipo desarrolla un sistema distribuido en el que varios microservicios intercambian información para completar un mismo proceso de negocio.\",\n  \"statement\": \"¿Cuál es la principal ventaja de usar un broker de mensajes como RabbitMQ para la comunicación entre microservicios?\",\n  \"options\": [\n    {\n      \"id\": \"A\",\n      \"text\": \"Reduce el acoplamiento temporal, porque el productor no necesita que el consumidor esté disponible.\"\n    },\n    {\n      \"id\": \"B\",\n      \"text\": \"Garantiza que las respuestas lleguen en el mismo orden en que se hicieron las peticiones HTTP.\"\n    },\n    {\n      \"id\": \"C\",\n      \"text\": \"Elimina la necesidad de acordar contratos de datos entre los servicios que se comunican.\"\n    },\n    {\n      \"id\": \"D\",\n      \"text\": \"Permite que todos los microservicios compartan la misma base de datos sin conflictos.\"\n    }\n  ],\n  \"correctOptionId\": \"A\",\n  \"justification\": \"La mensajería asíncrona desacopla en el tiempo al productor y al consumidor: el mensaje queda en la cola hasta que el consumidor pueda procesarlo.\",\n  \"bibliography\": \"Richardson, C. (2018). Microservices Patterns. Manning.\",\n  \"competence\": \"Diseño de software\",\n  \"topic\": \"Arquitectura de microservicios\",\n  \"subtopic\": \"Comunicación asíncrona\",\n  \"difficulty\": \"MEDIO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear pregunta como estudiante (sin rol)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{estudianteId}}"
+              }
+            ],
+            "url": "{{question_service_url}}/questions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"context\": \"Un equipo desarrolla un sistema distribuido en el que varios microservicios intercambian información para completar un mismo proceso de negocio.\",\n  \"statement\": \"¿Cuál es la principal ventaja de usar un broker de mensajes como RabbitMQ para la comunicación entre microservicios?\",\n  \"options\": [\n    {\n      \"id\": \"A\",\n      \"text\": \"Reduce el acoplamiento temporal, porque el productor no necesita que el consumidor esté disponible.\"\n    },\n    {\n      \"id\": \"B\",\n      \"text\": \"Garantiza que las respuestas lleguen en el mismo orden en que se hicieron las peticiones HTTP.\"\n    },\n    {\n      \"id\": \"C\",\n      \"text\": \"Elimina la necesidad de acordar contratos de datos entre los servicios que se comunican.\"\n    },\n    {\n      \"id\": \"D\",\n      \"text\": \"Permite que todos los microservicios compartan la misma base de datos sin conflictos.\"\n    }\n  ],\n  \"correctOptionId\": \"A\",\n  \"justification\": \"La mensajería asíncrona desacopla en el tiempo al productor y al consumidor: el mensaje queda en la cola hasta que el consumidor pueda procesarlo.\",\n  \"bibliography\": \"Richardson, C. (2018). Microservices Patterns. Manning.\",\n  \"competence\": \"Diseño de software\",\n  \"topic\": \"Arquitectura de microservicios\",\n  \"subtopic\": \"Comunicación asíncrona\",\n  \"difficulty\": \"MEDIO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Enviar pregunta a revisión (asíncrono)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{docenteId}}"
+              }
+            ],
+            "url": "{{question_service_url}}/questions/{{questionId}}/submit"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 202 - aceptada para procesamiento', function () {",
+                  "    pm.response.to.have.status(202);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('devuelve operationId', function () {",
+                  "    pm.expect(body.operationId).to.be.a('string');",
+                  "    pm.expect(body.status).to.eql('PROCESSING');",
+                  "});",
+                  "pm.collectionVariables.set('operationId', body.operationId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar operación inmediatamente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{question_service_url}}/operations/{{operationId}}",
+            "description": "Justo después del 202 la operación normalmente sigue PENDING: el 202 no garantiza que la transición terminó."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('estado PENDING o COMPLETED (nunca se informa falsamente)', function () {",
+                  "    pm.expect(['PENDING', 'COMPLETED']).to.include(pm.response.json().status);",
+                  "});",
+                  "console.log('Estado inmediato de la operación:', pm.response.json().status);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar operación tras el procesamiento",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{question_service_url}}/operations/{{operationId}}"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Espera para dar tiempo al procesamiento asíncrono en RabbitMQ",
+                  "setTimeout(function () {}, 3500);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('transición DRAFT → PENDING_REVIEW completada', function () {",
+                  "    pm.expect(body.status).to.eql('COMPLETED');",
+                  "    pm.expect(body.resultingState).to.eql('PENDING_REVIEW');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reenviar pregunta que ya está en revisión (fallo asíncrono)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{docenteId}}"
+              }
+            ],
+            "url": "{{question_service_url}}/questions/{{questionId}}/submit",
+            "description": "El comando se acepta (202), pero Lifecycle rechaza la transición PENDING_REVIEW → PENDING_REVIEW."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 202', function () {",
+                  "    pm.response.to.have.status(202);",
+                  "});",
+                  "pm.collectionVariables.set('failedOperationId', pm.response.json().operationId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar operación fallida",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{question_service_url}}/operations/{{failedOperationId}}"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Espera para dar tiempo al procesamiento asíncrono en RabbitMQ",
+                  "setTimeout(function () {}, 3500);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('la operación queda FAILED con el motivo', function () {",
+                  "    pm.expect(body.status).to.eql('FAILED');",
+                  "    pm.expect(body.message).to.include('no permitida');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar pregunta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{question_service_url}}/questions/{{questionId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('estado PENDING_REVIEW', function () {",
+                  "    pm.expect(pm.response.json().state).to.eql('PENDING_REVIEW');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar preguntas del docente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{question_service_url}}/questions?authorId={{docenteId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar pregunta inexistente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{question_service_url}}/questions/99999"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Lifecycle Service (:8084)",
+      "description": "Autoridad única sobre estados y transiciones.",
+      "item": [
+        {
+          "name": "Estado actual de la pregunta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{lifecycle_service_url}}/lifecycle/{{questionId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('PENDING_REVIEW', function () {",
+                  "    pm.expect(pm.response.json().state).to.eql('PENDING_REVIEW');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aprobar una pregunta en DRAFT (transición rechazada)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{lifecycle_service_url}}/lifecycle/{{draftQuestionId}}/transition",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetState\": \"APPROVED\",\n  \"requestedBy\": {{adminId}},\n  \"comment\": \"Intento inválido\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409 - transición rechazada', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test('mensaje de transición no permitida', function () {",
+                  "    pm.expect(pm.response.json().message).to.include('no permitida');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resultado de la operación en Lifecycle",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{lifecycle_service_url}}/lifecycle/operations/{{operationId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('COMPLETED', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql('COMPLETED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Máquina de estados (transiciones permitidas)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{lifecycle_service_url}}/lifecycle/transitions"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Estado de pregunta no registrada",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{lifecycle_service_url}}/lifecycle/99999"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Review Service (:8085)",
+      "description": "Asignación de revisor (REST → User, Question, Lifecycle) y evento ReviewerAssigned (RabbitMQ).",
+      "item": [
+        {
+          "name": "Asignar revisor a pregunta en DRAFT (no elegible)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": "{{review_service_url}}/reviews/assign",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionId\": {{draftQuestionId}},\n  \"reviewerId\": {{revisorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409 - pregunta no elegible', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Asignar usuario sin rol REVISOR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": "{{review_service_url}}/reviews/assign",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionId\": {{questionId}},\n  \"reviewerId\": {{estudianteId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400 - revisor no elegible', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Asignar sin ser administrador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{docenteId}}"
+              }
+            ],
+            "url": "{{review_service_url}}/reviews/assign",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionId\": {{questionId}},\n  \"reviewerId\": {{revisorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Asignar revisor a pregunta elegible",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": "{{review_service_url}}/reviews/assign",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionId\": {{questionId}},\n  \"reviewerId\": {{revisorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201 - asignación registrada', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('asignación ASSIGNED y evento publicado', function () {",
+                  "    pm.expect(body.assignment.status).to.eql('ASSIGNED');",
+                  "    pm.expect(body.assignment.notificationPublished).to.eql(true);",
+                  "});",
+                  "pm.collectionVariables.set('assignmentId', body.assignment.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Asignar de nuevo la misma pregunta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": "{{review_service_url}}/reviews/assign",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionId\": {{questionId}},\n  \"reviewerId\": {{revisorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verificar estado IN_REVIEW",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{lifecycle_service_url}}/lifecycle/{{questionId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('IN_REVIEW', function () {",
+                  "    pm.expect(pm.response.json().state).to.eql('IN_REVIEW');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rechazar sin motivo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{revisorId}}"
+              }
+            ],
+            "url": "{{review_service_url}}/reviews/assignments/{{assignmentId}}/evaluate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"approved\": false,\n  \"comments\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Evaluar con un usuario que no es el revisor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{docenteId}}"
+              }
+            ],
+            "url": "{{review_service_url}}/reviews/assignments/{{assignmentId}}/evaluate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"approved\": false,\n  \"comments\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rechazar una pregunta en IN_REVIEW",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{revisorId}}"
+              }
+            ],
+            "url": "{{review_service_url}}/reviews/assignments/{{assignmentId}}/evaluate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"approved\": false,\n  \"comments\": \"La justificación no explica por qué los distractores son incorrectos y falta citar el capítulo.\",\n  \"pedagogicalQuality\": false,\n  \"technicalQuality\": true,\n  \"structuralQuality\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('estado REJECTED', function () {",
+                  "    pm.expect(pm.response.json().questionState).to.eql('REJECTED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Historial: motivo de rechazo registrado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{lifecycle_service_url}}/lifecycle/{{questionId}}/history"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const last = pm.response.json().slice(-1)[0];",
+                  "pm.test('última transición a REJECTED con motivo', function () {",
+                  "    pm.expect(last.toState).to.eql('REJECTED');",
+                  "    pm.expect(last.comment).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar asignaciones de la pregunta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{review_service_url}}/reviews/assignments?questionId={{questionId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Notification Service (:8086)",
+      "description": "Consulta posterior de las notificaciones procesadas de forma asíncrona.",
+      "item": [
+        {
+          "name": "Notificaciones del revisor (ReviewerAssigned)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{notification_service_url}}/notifications?recipientId={{revisorId}}"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Espera para dar tiempo al procesamiento asíncrono en RabbitMQ",
+                  "setTimeout(function () {}, 3000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const list = pm.response.json();",
+                  "pm.test('notificación de asignación generada y enviada', function () {",
+                  "    const n = list.find(x => x.type === 'REVIEWER_ASSIGNED' && x.questionId == pm.collectionVariables.get('questionId'));",
+                  "    pm.expect(n).to.not.be.undefined;",
+                  "    pm.expect(n.status).to.eql('SENT');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Notificaciones de la pregunta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{notification_service_url}}/notifications?questionId={{questionId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Todas las notificaciones",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{notification_service_url}}/notifications"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "7. Flujo de corrección y aprobación (end-to-end)",
+      "description": "Corregir una pregunta rechazada, reenviarla, asignarla y aprobarla.",
+      "item": [
+        {
+          "name": "Corregir la pregunta rechazada",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{docenteId}}"
+              }
+            ],
+            "url": "{{question_service_url}}/questions/{{questionId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"context\": \"Un equipo desarrolla un sistema distribuido en el que varios microservicios intercambian información para completar un mismo proceso de negocio.\",\n  \"statement\": \"¿Cuál es la principal ventaja de usar un broker de mensajes como RabbitMQ para la comunicación entre microservicios?\",\n  \"options\": [\n    {\n      \"id\": \"A\",\n      \"text\": \"Reduce el acoplamiento temporal, porque el productor no necesita que el consumidor esté disponible.\"\n    },\n    {\n      \"id\": \"B\",\n      \"text\": \"Garantiza que las respuestas lleguen en el mismo orden en que se hicieron las peticiones HTTP.\"\n    },\n    {\n      \"id\": \"C\",\n      \"text\": \"Elimina la necesidad de acordar contratos de datos entre los servicios que se comunican.\"\n    },\n    {\n      \"id\": \"D\",\n      \"text\": \"Permite que todos los microservicios compartan la misma base de datos sin conflictos.\"\n    }\n  ],\n  \"correctOptionId\": \"A\",\n  \"justification\": \"Corregida según la revisión: RabbitMQ conserva el mensaje en una cola durable hasta que el consumidor lo procese, lo que desacopla en el tiempo al productor y al consumidor.\",\n  \"bibliography\": \"Richardson, C. (2018). Microservices Patterns. Manning. Cap. 3.\",\n  \"competence\": \"Diseño de software\",\n  \"topic\": \"Arquitectura de microservicios\",\n  \"subtopic\": \"Comunicación asíncrona\",\n  \"difficulty\": \"MEDIO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('vuelve a DRAFT', function () {",
+                  "    pm.expect(pm.response.json().question.state).to.eql('DRAFT');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reenviar a revisión",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{docenteId}}"
+              }
+            ],
+            "url": "{{question_service_url}}/questions/{{questionId}}/submit"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 202', function () {",
+                  "    pm.response.to.have.status(202);",
+                  "});",
+                  "pm.collectionVariables.set('operationId2', pm.response.json().operationId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar operación de reenvío",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{question_service_url}}/operations/{{operationId2}}"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Espera para dar tiempo al procesamiento asíncrono en RabbitMQ",
+                  "setTimeout(function () {}, 3500);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('COMPLETED → PENDING_REVIEW', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql('COMPLETED');",
+                  "    pm.expect(pm.response.json().resultingState).to.eql('PENDING_REVIEW');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Asignar revisor nuevamente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": "{{review_service_url}}/reviews/assign",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionId\": {{questionId}},\n  \"reviewerId\": {{revisorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.collectionVariables.set('assignmentId2', pm.response.json().assignment.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aprobar sin cumplir los criterios",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{revisorId}}"
+              }
+            ],
+            "url": "{{review_service_url}}/reviews/assignments/{{assignmentId2}}/evaluate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"approved\": true,\n  \"comments\": \"\",\n  \"pedagogicalQuality\": true,\n  \"technicalQuality\": false,\n  \"structuralQuality\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aprobar la pregunta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{revisorId}}"
+              }
+            ],
+            "url": "{{review_service_url}}/reviews/assignments/{{assignmentId2}}/evaluate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"approved\": true,\n  \"comments\": \"Cumple los criterios de calidad.\",\n  \"pedagogicalQuality\": true,\n  \"technicalQuality\": true,\n  \"structuralQuality\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('APPROVED', function () {",
+                  "    pm.expect(pm.response.json().questionState).to.eql('APPROVED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Modificar una pregunta aprobada (no permitido)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{docenteId}}"
+              }
+            ],
+            "url": "{{question_service_url}}/questions/{{questionId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"context\": \"Un equipo desarrolla un sistema distribuido en el que varios microservicios intercambian información para completar un mismo proceso de negocio.\",\n  \"statement\": \"¿Cuál es la principal ventaja de usar un broker de mensajes como RabbitMQ para la comunicación entre microservicios?\",\n  \"options\": [\n    {\n      \"id\": \"A\",\n      \"text\": \"Reduce el acoplamiento temporal, porque el productor no necesita que el consumidor esté disponible.\"\n    },\n    {\n      \"id\": \"B\",\n      \"text\": \"Garantiza que las respuestas lleguen en el mismo orden en que se hicieron las peticiones HTTP.\"\n    },\n    {\n      \"id\": \"C\",\n      \"text\": \"Elimina la necesidad de acordar contratos de datos entre los servicios que se comunican.\"\n    },\n    {\n      \"id\": \"D\",\n      \"text\": \"Permite que todos los microservicios compartan la misma base de datos sin conflictos.\"\n    }\n  ],\n  \"correctOptionId\": \"A\",\n  \"justification\": \"Corregida según la revisión: RabbitMQ conserva el mensaje en una cola durable hasta que el consumidor lo procese, lo que desacopla en el tiempo al productor y al consumidor.\",\n  \"bibliography\": \"Richardson, C. (2018). Microservices Patterns. Manning. Cap. 3.\",\n  \"competence\": \"Diseño de software\",\n  \"topic\": \"Arquitectura de microservicios\",\n  \"subtopic\": \"Comunicación asíncrona\",\n  \"difficulty\": \"MEDIO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Historial completo de estados",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{lifecycle_service_url}}/lifecycle/{{questionId}}/history"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const states = pm.response.json().map(t => t.toState);",
+                  "pm.test('recorrido completo del ciclo de vida', function () {",
+                  "    pm.expect(states).to.eql(['DRAFT','PENDING_REVIEW','IN_REVIEW','REJECTED','DRAFT','PENDING_REVIEW','IN_REVIEW','APPROVED']);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "user_service_url",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "validation_service_url",
+      "value": "http://localhost:8082"
+    },
+    {
+      "key": "question_service_url",
+      "value": "http://localhost:8083"
+    },
+    {
+      "key": "lifecycle_service_url",
+      "value": "http://localhost:8084"
+    },
+    {
+      "key": "review_service_url",
+      "value": "http://localhost:8085"
+    },
+    {
+      "key": "notification_service_url",
+      "value": "http://localhost:8086"
+    },
+    {
+      "key": "docenteId",
+      "value": ""
+    },
+    {
+      "key": "adminId",
+      "value": ""
+    },
+    {
+      "key": "revisorId",
+      "value": ""
+    },
+    {
+      "key": "estudianteId",
+      "value": ""
+    },
+    {
+      "key": "questionId",
+      "value": ""
+    },
+    {
+      "key": "draftQuestionId",
+      "value": ""
+    },
+    {
+      "key": "operationId",
+      "value": ""
+    },
+    {
+      "key": "failedOperationId",
+      "value": ""
+    },
+    {
+      "key": "assignmentId",
+      "value": ""
+    },
+    {
+      "key": "operationId2",
+      "value": ""
+    },
+    {
+      "key": "assignmentId2",
+      "value": ""
+    }
+  ]
+}

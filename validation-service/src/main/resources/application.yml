@@ -1,0 +1,22 @@
+server:
+  port: ${SERVER_PORT:8082}
+
+spring:
+  application:
+    name: validation-service
+
+# Reglas de validación configurables por servicio
+validation:
+  rules:
+    options-count: 4              # opciones exactas por pregunta (1 clave + 3 distractores)
+    min-statement-length: 15      # longitud mínima del enunciado
+    max-option-length: 300        # longitud máxima de cada opción
+    length-warning-ratio: 1.8     # advertencia si la clave es mucho más larga que los distractores
+    prohibited-expressions:
+      - todas las anteriores
+      - ninguna de las anteriores
+      - todas las opciones
+      - ninguna de las opciones
+      - todas son correctas
+      - ninguna es correcta
+      - ninguna de las otras

@@ -1,0 +1,39 @@
+server:
+  port: ${SERVER_PORT:8086}
+
+spring:
+  application:
+    name: notification-service
+  datasource:
+    url: jdbc:h2:mem:notificationdb;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
+    listener:
+      simple:
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1000ms
+
+notification:
+  # Simula la latencia de un servidor de correo. Como el envío es asíncrono,
+  # este tiempo NO afecta la respuesta de la asignación en Review Service.
+  simulated-send-delay-ms: ${NOTIFICATION_DELAY_MS:2000}
+
+logging:
+  level:
+    co.edu.unicauca: INFO

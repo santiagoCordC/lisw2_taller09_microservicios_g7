@@ -1,0 +1,77 @@
+# Infraestructura del taller.
+#
+#   Solo RabbitMQ (los servicios se ejecutan desde el IDE o con Maven):
+#       docker compose up -d
+#
+#   Todo el sistema en contenedores (RabbitMQ + 6 microservicios):
+#       docker compose --profile full up -d --build
+#
+# Consola de administración de RabbitMQ: http://localhost:15672  (guest / guest)
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: saberpro-rabbitmq
+    ports:
+      - "5672:5672"     # Puerto AMQP para microservicios
+      - "15672:15672"   # Consola web de administración (guest/guest)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  user-service:
+    profiles: ["full"]
+    build: { context: ., args: { SERVICE: user-service } }
+    ports: ["8081:8081"]
+
+  validation-service:
+    profiles: ["full"]
+    build: { context: ., args: { SERVICE: validation-service } }
+    ports: ["8082:8082"]
+
+  question-service:
+    profiles: ["full"]
+    build: { context: ., args: { SERVICE: question-service } }
+    ports: ["8083:8083"]
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      USER_SERVICE_URL: http://user-service:8081
+      VALIDATION_SERVICE_URL: http://validation-service:8082
+      LIFECYCLE_SERVICE_URL: http://lifecycle-service:8084
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+
+  lifecycle-service:
+    profiles: ["full"]
+    build: { context: ., args: { SERVICE: lifecycle-service } }
+    ports: ["8084:8084"]
+    environment:
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+
+  review-service:
+    profiles: ["full"]
+    build: { context: ., args: { SERVICE: review-service } }
+    ports: ["8085:8085"]
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      USER_SERVICE_URL: http://user-service:8081
+      QUESTION_SERVICE_URL: http://question-service:8083
+      LIFECYCLE_SERVICE_URL: http://lifecycle-service:8084
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+
+  notification-service:
+    profiles: ["full"]
+    build: { context: ., args: { SERVICE: notification-service } }
+    ports: ["8086:8086"]
+    environment:
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      rabbitmq: { condition: service_healthy }
